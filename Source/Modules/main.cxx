@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------------
- * This file is part of SWIG, which is licensed as a whole under version 3 
+ * This file is part of SWIG, which is licensed as a whole under version 3
  * (or any later version) of the GNU General Public License. Some additional
  * terms also apply to certain portions of SWIG. The full details of the SWIG
  * license and copyrights can be found in the LICENSE and COPYRIGHT files
@@ -90,6 +90,7 @@ static const char *usage1 = (const char *) "\
 static const char *usage2 = (const char *) "\
      -E              - Preprocess only, does not generate wrapper code\n\
      -external-runtime [file] - Export the SWIG runtime stack\n\
+     -namespace <nm> - Generate external-runtime namespace <nm>\n\
      -fakeversion <v>- Make SWIG fake the program version number to <v>\n\
      -fcompact       - Compile in compact mode\n\
      -features <list>- Set global features, where <list> is a comma separated list of\n\
@@ -207,6 +208,7 @@ static String *dependencies_file = 0;
 static String *dependencies_target = 0;
 static int external_runtime = 0;
 static String *external_runtime_name = 0;
+static String *namespce = 0;  // Optional namespace name
 enum { STAGE1=1, STAGE2=2, STAGE3=4, STAGE4=8, STAGEOVERFLOW=16 };
 static List *libfiles = 0;
 static List *all_output_files = 0;
@@ -414,6 +416,9 @@ static void SWIG_dump_runtime() {
   }
 
   Swig_banner(runtime);
+  if (namespce) {
+    Printf(runtime, "namespace %s {\n", namespce);
+  }
   Printf(runtime, "\n");
 
   s = Swig_include_sys("swiglabels.swg");
@@ -454,6 +459,9 @@ static void SWIG_dump_runtime() {
     Exit(EXIT_FAILURE);
   }
   Printf(runtime, "%s", s);
+  if (namespce) {
+    Printf(runtime, "} // End namespace %s\n", namespce);
+  }
   Delete(s);
 
   Delete(runtime);
@@ -551,6 +559,20 @@ static void getoptions(int argc, char *argv[]) {
 	  external_runtime_name = NewString(argv[i + 1]);
 	  Swig_mark_arg(i + 1);
 	  i++;
+	}
+      } else if (strcmp(argv[i], "-namespace") == 0) {
+	if (argv[i + 1]) {
+	  namespce = NewString("");
+	  Printf(namespce, argv[i + 1]);
+	  if (Len(namespce) == 0) {
+	    Delete(namespce);
+	    namespce = 0;
+	  }
+	  Swig_mark_arg(i);
+	  Swig_mark_arg(i + 1);
+	  i++;
+	} else {
+	  Swig_arg_error();
 	}
       } else if ((strcmp(argv[i], "-make_default") == 0) || (strcmp(argv[i], "-makedefault") == 0)) {
 	GenerateDefault = 1;
