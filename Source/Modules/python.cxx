@@ -31,6 +31,7 @@ static String *package = 0;
 static String *mainmodule = 0;
 static String *interface = 0;
 static String *global_name = 0;
+static String *namespce = 0;  // Optional namespace name
 static int shadow = 1;
 static int use_kw = 0;
 static int director_method_index = 0;
@@ -119,7 +120,8 @@ Python Options (available with -python)\n\
      -flatstaticmethod         - Generate additional flattened Python methods for C++ static methods\n\
      -globals <name> - Set <name> used to access C global variable (default: 'cvar')\n\
      -interface <mod>- Set low-level C/C++ module name to <mod> (default: module name prefixed by '_')\n\
-     -keyword        - Use keyword arguments\n";
+     -keyword        - Use keyword arguments\n\
+     -namespace <nm> - Generate wrappers into C# namespace <nm>\n";
 static const char *usage2 = "\
      -nofastunpack   - Use traditional UnpackTuple method to parse the argument functions\n\
      -noh            - Don't generate the output header file\n";
@@ -399,6 +401,20 @@ public:
 	} else if (strcmp(argv[i], "-relativeimport") == 0) {
 	  relativeimport = 1;
 	  Swig_mark_arg(i);
+	} else if (strcmp(argv[i], "-namespace") == 0) {
+	  if (argv[i + 1]) {
+	    namespce = NewString("");
+	    Printf(namespce, argv[i + 1]);
+	    if (Len(namespce) == 0) {
+	      Delete(namespce);
+	      namespce = 0;
+	    }
+	    Swig_mark_arg(i);
+	    Swig_mark_arg(i + 1);
+	    i++;
+	  } else {
+	    Swig_arg_error();
+	  }
 	} else if (strcmp(argv[i], "-cppcast") == 0 ||
 		   strcmp(argv[i], "-fastinit") == 0 ||
 		   strcmp(argv[i], "-fastquery") == 0 ||
@@ -587,6 +603,10 @@ public:
 
     Swig_banner(f_begin);
 
+    if (namespce) {
+      Printf(f_begin, "namespace %s {\n", namespce);
+    }
+
     Printf(f_runtime, "\n\n#ifndef SWIGPYTHON\n#define SWIGPYTHON\n#endif\n\n");
 
     if (directorsEnabled()) {
@@ -646,6 +666,10 @@ public:
       if (dirprot_mode()) {
 	Printf(f_directors_h, "#include <map>\n");
 	Printf(f_directors_h, "#include <string>\n\n");
+      }
+
+      if (namespce) {
+        Printf(f_directors_h, "\nnamespace %s {\n", namespce);
       }
 
       Printf(f_directors, "\n\n");
@@ -840,6 +864,10 @@ public:
     Printf(f_init, "  return;\n");
     Printf(f_init, "#endif\n");
     Printf(f_init, "}\n");
+
+    if (namespce) {
+      Printf(f_init, "} // End namespace %s\n", namespce);
+    }
 
     Printf(f_wrappers, "#ifdef __cplusplus\n");
     Printf(f_wrappers, "}\n");
@@ -3878,6 +3906,9 @@ public:
     }
 
     Printf(f_directors_h, "};\n\n");
+    if (namespce) {
+      Printf(f_directors_h, "} // End namespace %s\n", namespce);
+    }
     return Language::classDirectorEnd(n);
   }
 
