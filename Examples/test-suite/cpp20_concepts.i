@@ -1,0 +1,66 @@
+/* Test SWIG's handling of C++20 concepts.
+ *
+ * Summary of findings (SWIG 4.2.0):
+ *   OK  - concept definitions (simple constraint or requires expression)
+ *   OK  - template<ConceptName T> constrained template parameters
+ *   FAIL - trailing requires clause: `T f(T x) requires Concept<T>`
+ *   FAIL - abbreviated function templates: `Concept auto f(Concept auto x)`
+ *   FAIL - requires clause on member functions: `T get() const requires Concept<T>`
+ *
+ * Workaround: guard failing constructs with #if INCLUDE_FAILING.
+ */
+%module cpp20_concepts
+
+%inline %{
+#include <concepts>
+
+#define INCLUDE_FAILING 1
+
+// --- Constructs SWIG parses without error ---
+
+// Basic concept definition: OK
+template<typename T>
+concept Numeric = std::integral<T> || std::floating_point<T>;
+
+// Concept with requires expression: OK
+template<typename T>
+concept Addable = requires(T a, T b) {
+  { a + b } -> std::same_as<T>;
+};
+
+// Constrained template parameter (concept-name as type): OK (wraps the template)
+template<Numeric T>
+T constrained_template_parameter(T x) {
+  return x * x;
+}
+// --- Constructs that cause SWIG parse errors ---
+
+// Trailing requires clause on a free function: FAIL
+template<typename T>
+T trailing_requires_clause_free_function(T x)
+#if INCLUDE_FAILING
+  requires Numeric<T>
+#endif
+{
+  return x * x * x;
+}
+
+// Abbreviated function template (C++20): FAIL
+#if INCLUDE_FAILING
+Numeric auto abbreviated_function_template(Numeric auto x) { return x + x; }
+auto abbreviated_function_template_auto_only(auto x) { return x + x; }
+#endif
+
+// Requires clause on a class member function: FAIL
+template<typename T>
+struct RequireClauseOnClassMemberFunction {
+  T value;
+  T get() const
+#if INCLUDE_FAILING
+    requires Numeric<T>
+#endif
+  {
+    return value; }
+  };
+
+%}
