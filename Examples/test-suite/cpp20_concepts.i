@@ -28,6 +28,16 @@ concept Addable = requires(T a, T b) {
   { a + b } -> std::same_as<T>;
 };
 
+template<typename T>
+concept AddableInteger = Numeric<T> && std::integral<T>;
+
+template <typename T>
+concept UniqueAddable = Addable<T> && requires {
+  { T::is_unique } -> std::convertible_to<bool>;
+  requires T::is_unique;
+};
+
+
 // Constrained template parameter (concept-name as type): OK (wraps the template)
 template<Numeric T>
 T constrained_template_parameter(T x) {
