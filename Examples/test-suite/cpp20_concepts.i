@@ -13,6 +13,7 @@
 
 %inline %{
 #include <concepts>
+#include <iostream>
 
 #define INCLUDE_FAILING 1
 
@@ -72,5 +73,31 @@ struct RequireClauseOnClassMemberFunction {
   {
     return value; }
   };
+
+
+// Function constrained by concept: should resolve by most specific (Integral) to less specific concept (Numeric)
+template<typename T>
+concept Integral = std::integral<T>;
+
+#if INCLUDE_FAILING
+template <Integral T>
+void function_resolve() {
+  std::cout << "Integral\n";
+}
+
+template <Numeric T>
+void function_resolve() {
+  std::cout << "Numeric\n";
+}
+#endif
+
+template<Numeric T>
+void function_resolve_via_constexpr() {
+  if constexpr (std::integral<T>) {
+    std::cout << "Integral\n";
+  } else {
+    std::cout << "Numeric\n";
+  }
+}
 
 %}
