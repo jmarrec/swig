@@ -10,6 +10,8 @@
 
 #include <vector>
 #include <string>
+/* Some std_vector.i variants only #include this in a %{ %} block, a no-op for a module reached via %import. */
+#include <stdexcept>
 
 class Bar {
 public:
