@@ -1232,12 +1232,6 @@ static String *manglestr_default(const SwigType *s) {
        so the mangled name stays a stable function of the type, regardless of what's been
        %template'd locally (see swig/swig#3553). */
     String *ty = SwigType_istemplate(qt) ? Swig_symbol_template_deftype(qt, 0) : Copy(qt);
-    if (getenv("SWIG_TRACE_MANGLE") && strstr(Char(ss), "Bar")) {
-      Printf(stderr, "[manglestr_default] ss=%s\n", ss);
-      Printf(stderr, "[manglestr_default] dt=%s\n", dt);
-      Printf(stderr, "[manglestr_default] qt=%s\n", qt);
-      Printf(stderr, "[manglestr_default] ty=%s\n", ty);
-    }
     Delete(dt);
     Delete(qt);
     Delete(ss);
