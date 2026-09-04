@@ -34,6 +34,14 @@ CPP_TEST_CASES = \
 MULTI_CPP_TEST_CASES = \
 	go_subdir_import \
 
+# import_vector_fwd_b.i only %imports import_vector_fwd_a.i for the sake of the
+# C++ runtime type registry (see import_vector_fwd_a.i); it never references any
+# of module a's wrapped Go types. SWIG's Go backend always emits a Go `import`
+# statement for every %import though, so the generated import_vector_fwd_b.go
+# ends up with an import that Go's compiler rejects as unused.
+FAILING_MULTI_CPP_TESTS += \
+	import_vector_fwd \
+
 include $(srcdir)/../common.mk
 
 INCLUDES = -I$(abs_top_srcdir)/$(EXAMPLES)/$(TEST_SUITE)
@@ -189,8 +197,6 @@ clean:
 	rm -f import_stl_a.go import_stl_a.gox
 	rm -f import_stl_b.go import_stl_b.gox
 	rm -f import_stl_c.go import_stl_c.gox
-	rm -f import_vector_fwd_a.go import_vector_fwd_a.gox
-	rm -f import_vector_fwd_b.go import_vector_fwd_b.gox
 	rm -f imports_a.go imports_a.gox imports_b.go imports_b.gox
 	rm -f mod_a.go mod_a.gox mod_b.go mod_b.gox
 	rm -f multi_import_a.go multi_import_a.gox
